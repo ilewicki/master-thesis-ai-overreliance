@@ -1,0 +1,7 @@
+name: igor-thesis-poc
+
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+    - streamlit

@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Conda
+*.conda
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.*
+
+# Local data
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Build artifacts
+build/
+dist/
+*.egg-info
+
+# Hupyter
+.ipynb_checkpoints/
