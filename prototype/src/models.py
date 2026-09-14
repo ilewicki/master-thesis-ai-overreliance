@@ -29,6 +29,7 @@ class AIRecommendation:
 @dataclass
 class ExperimentState:
     stage: str = "initial"
+    observation_saved: bool | None = None
 
     initial_decision: Decision | None = None
     initial_confidence: int | None = None

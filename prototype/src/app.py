@@ -9,6 +9,10 @@ from scoring import (
     calculate_score,
 )
 
+from database import (
+    initialize_database, 
+    save_observation,
+)
 
 scenario = SCENARIO_01
 ai = AI_RECOMMENDATION_01
@@ -25,6 +29,8 @@ if "experiment" not in st.session_state:
 
 experiment = st.session_state.experiment
 
+initialize_database()
+observation_saved: bool = False
 
 # ----------------------------------------------------------------------
 # Initial decision
@@ -127,6 +133,16 @@ if experiment.stage == "ai":
             ai.decision,
             scenario.optimal_decision,
         )
+
+        if not experiment.observation_saved:
+            save_observation(
+                scenario_id=scenario.scenario_id,
+                ai_recommendation=ai.decision,
+                ai_confidence=ai.confidence,
+                experiment=experiment,
+            )
+
+            experiment.observation_saved = True
 
         experiment.stage = "complete"
 
