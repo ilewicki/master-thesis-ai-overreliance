@@ -9,7 +9,9 @@ DATABASE_PATH = Path(__file__).parent.parent / "data" / "experiment.db"
 
 
 def get_connection():
-    return sqlite3.connect(DATABASE_PATH)
+    connection = sqlite3.connect(DATABASE_PATH)
+    connection.row_factory = sqlite3.Row
+    return connection
 
 
 def initialize_database():
@@ -97,3 +99,37 @@ def save_observation(
 
     connection.commit()
     connection.close()
+
+
+def get_observations():
+    connection = get_connection()
+
+    cursor = connection.execute(
+        """
+        SELECT
+            id,
+            scenario_id,
+            initial_decision,
+            initial_confidence,
+            initial_score,
+            ai_recommendation,
+            ai_confidence,
+            ai_correct,
+            final_decision,
+            final_confidence,
+            final_score,
+            score_change,
+            decision_changed,
+            followed_ai,
+            overreliance,
+            created_at
+        FROM observations
+        ORDER BY id DESC
+        """
+    )
+
+    observations = [dict(row) for row in cursor.fetchall()]
+
+    connection.close()
+
+    return observations
