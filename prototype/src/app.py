@@ -1,82 +1,180 @@
 import streamlit as st
 
-# ----------------------------------------------------------------------
-SCENARIO = {
-    "A": {
-        "value": 80,
-        "cost": 20,
-    },
-    "B": {
-        "value": 110,
-        "cost": 40,
-    },
-}
+from models import ExperimentState
+from scenarios import AI_RECOMMENDATION_01, SCENARIO_01
+from scoring import (
+    calculate_decision_change,
+    calculate_followed_ai,
+    calculate_overreliance,
+    calculate_score,
+)
 
-AI_RECOMMENDATION = "A"
-AI_CONFIDENCE = 95
 
-# Declared Loss Function
-def calculate_score(option):
-    return SCENARIO[option]["value"] - SCENARIO[option]["cost"]
+scenario = SCENARIO_01
+ai = AI_RECOMMENDATION_01
 
-def calculate_decision_change(initial_decision, final_decision):
-    return initial_decision != final_decision
 
-# ----------------------------------------------------------------------
 st.title("AI Overreliance — POC")
 
-st.header("Scenariusz 01")
 
-st.write(
-    "Masz do wyboru dwie opcje. "
-    "Wybierz tę, którą uważasz za lepszą."
-)
+# ----------------------------------------------------------------------
+# Experiment state
 
-option = st.radio(
-    "Twój wybór:",
-    ["A", "B"],
-)
+if "experiment" not in st.session_state:
+    st.session_state.experiment = ExperimentState()
 
-confidence = st.slider(
-    "Jak pewny jesteś swojej decyzji?",
-    min_value=0,
-    max_value=100,
-    value=50,
-)
+experiment = st.session_state.experiment
 
-if st.button("Potwierdź decyzję"):
-    st.session_state["initial_decision"] = option
-    st.session_state["initial_confidence"] = confidence
-    st.session_state["initial_score"] = calculate_score(option)
-    st.session_state["initial_decision_submitted"] = True
 
-if st.session_state.get("initial_decision_submitted", False):
+# ----------------------------------------------------------------------
+# Initial decision
 
+if experiment.stage == "initial":
+    st.header("Scenariusz 01")
+    st.write(scenario.description)
+
+    with st.form("initial_decision_form"):
+        initial_decision = st.radio(
+            "Twój wybór:",
+            list(scenario.options.keys()),
+        )
+
+        initial_confidence = st.slider(
+            "Jak pewny jesteś swojej decyzji?",
+            min_value=0,
+            max_value=100,
+            value=50,
+        )
+
+        submitted = st.form_submit_button(
+            "Potwierdź decyzję"
+        )
+
+    if submitted:
+        experiment.initial_decision = initial_decision
+        experiment.initial_confidence = initial_confidence
+        experiment.initial_score = calculate_score(
+            scenario,
+            initial_decision,
+        )
+        experiment.stage = "ai"
+
+        st.rerun()
+
+
+# ----------------------------------------------------------------------
+# AI recommendation and final decision
+
+if experiment.stage == "ai":
     st.header("Rekomendacja AI")
 
     st.write(
-        f"AI rekomenduje: **{AI_RECOMMENDATION}**"
+        f"AI rekomenduje: **{ai.decision}**"
     )
 
     st.write(
-        f"Pewność AI: **{AI_CONFIDENCE}%**"
+        f"Pewność AI: **{ai.confidence}%**"
     )
 
-    final_decision = st.radio(
-        "Jaka jest Twoja ostateczna decyzja?",
-        ["A", "B"],
-        key="final_decision_input",
+    with st.form("final_decision_form"):
+        final_decision = st.radio(
+            "Jaka jest Twoja ostateczna decyzja?",
+            list(scenario.options.keys()),
+        )
+
+        final_confidence = st.slider(
+            "Jak pewny jesteś swojej ostatecznej decyzji?",
+            min_value=0,
+            max_value=100,
+            value=50,
+        )
+
+        submitted = st.form_submit_button(
+            "Potwierdź ostateczną decyzję"
+        )
+
+    if submitted:
+        experiment.final_decision = final_decision
+        experiment.final_confidence = final_confidence
+
+        experiment.final_score = calculate_score(
+            scenario,
+            final_decision,
+        )
+
+        experiment.score_change = (
+            experiment.final_score
+            - experiment.initial_score
+        )
+
+        experiment.decision_changed = calculate_decision_change(
+            experiment.initial_decision,
+            experiment.final_decision,
+        )
+
+        experiment.followed_ai = calculate_followed_ai(
+            experiment.final_decision,
+            ai.decision,
+        )
+
+        experiment.ai_correct = (
+            ai.decision == scenario.optimal_decision
+        )
+
+        experiment.overreliance = calculate_overreliance(
+            experiment.initial_decision,
+            experiment.final_decision,
+            ai.decision,
+            scenario.optimal_decision,
+        )
+
+        experiment.stage = "complete"
+
+        st.rerun()
+
+
+# ----------------------------------------------------------------------
+# Experiment summary
+
+if experiment.stage == "complete":
+    st.header("Eksperyment zakończony")
+
+    st.write(
+        f"Decyzja początkowa: "
+        f"**{experiment.initial_decision}**"
     )
 
-    final_confidence = st.slider(
-        "Jak pewny jesteś swojej ostatecznej decyzji?",
-        min_value=0,
-        max_value=100,
-        value=50,
-        key="final_confidence_input",
+    st.write(
+        f"Decyzja końcowa: "
+        f"**{experiment.final_decision}**"
     )
 
-    if st.button("Potwierdź ostateczną decyzję"):
-        st.session_state["final_decision"] = final_decision
-        st.session_state["final_confidence"] = final_confidence
+    st.write(
+        f"Wynik początkowy: "
+        f"**{experiment.initial_score} pkt**"
+    )
 
+    st.write(
+        f"Wynik końcowy: "
+        f"**{experiment.final_score} pkt**"
+    )
+
+    st.write(
+        f"Zmiana wyniku: "
+        f"**{experiment.score_change:+d} pkt**"
+    )
+
+    st.write(
+        f"Zmiana decyzji: "
+        f"**{experiment.decision_changed}**"
+    )
+
+    st.write(
+        f"Podążanie za AI: "
+        f"**{experiment.followed_ai}**"
+    )
+
+    st.write(
+        f"Overreliance: "
+        f"**{experiment.overreliance}**"
+    )
