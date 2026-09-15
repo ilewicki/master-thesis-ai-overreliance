@@ -1,4 +1,5 @@
 import streamlit as st
+import uuid
 
 from database import initialize_database
 from pages.dashboard_page import render_dashboard
@@ -9,6 +10,9 @@ st.set_page_config(
     page_title="AI Overreliance",
     page_icon="🧠",
 )
+
+if "participant_id" not in st.session_state:
+    st.session_state.participant_id = str(uuid.uuid4())
 
 initialize_database()
 

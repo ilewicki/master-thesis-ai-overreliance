@@ -2,7 +2,12 @@ import streamlit as st
 
 from database import save_observation
 from models import ExperimentState
-from scenarios import AI_RECOMMENDATION_01, SCENARIO_01
+from scenarios import (
+    AI_RECOMMENDATION_01,
+    AI_RECOMMENDATION_02,
+    SCENARIO_01,
+    SCENARIO_02,
+)
 from scoring import (
     calculate_decision_change,
     calculate_followed_ai,
@@ -18,21 +23,47 @@ from experiment_ui import (
 )
 
 
+SCENARIOS = [
+    (SCENARIO_01, AI_RECOMMENDATION_01),
+    (SCENARIO_02, AI_RECOMMENDATION_02),
+]
+
+
 def render_experiment():
-    scenario = SCENARIO_01
-    ai = AI_RECOMMENDATION_01
+    participant_id = st.session_state.participant_id
     experiment = get_experiment_state()
 
+    current_scenario_index = get_current_scenario_index()
+
+    if current_scenario_index >= len(SCENARIOS):
+        render_experiment_summary(
+            get_completed_experiments()
+        )
+        return
+
+    scenario, ai = SCENARIOS[current_scenario_index]
+
+    # Header UI
     render_header()
+    st.caption(
+        f"Scenariusz badawczy nr {current_scenario_index + 1} z {len(SCENARIOS)}"
+    )
 
     if experiment.stage == "initial":
         initial_stage(experiment, scenario)
 
     elif experiment.stage == "ai":
-        ai_stage(experiment, scenario, ai)
+        ai_stage(
+            experiment,
+            scenario,
+            ai,
+            participant_id,
+        )
 
     elif experiment.stage == "complete":
-        render_experiment_summary(experiment)
+        render_experiment_summary(
+            get_completed_experiments()
+        )
 
 
 def get_experiment_state() -> ExperimentState:
@@ -42,7 +73,21 @@ def get_experiment_state() -> ExperimentState:
     return st.session_state.experiment
 
 
-def initial_stage(experiment, scenario):
+def get_completed_experiments() -> list[ExperimentState]:
+    if "completed_experiments" not in st.session_state:
+        st.session_state.completed_experiments = []
+
+    return st.session_state.completed_experiments
+
+
+def get_current_scenario_index() -> int:
+    if "current_scenario_index" not in st.session_state:
+        st.session_state.current_scenario_index = 0
+
+    return st.session_state.current_scenario_index
+
+
+def initial_stage(experiment: ExperimentState, scenario):
     decision, confidence, submitted = render_initial_decision(scenario)
 
     if not submitted:
@@ -59,7 +104,12 @@ def initial_stage(experiment, scenario):
     st.rerun()
 
 
-def ai_stage(experiment, scenario, ai):
+def ai_stage(
+    experiment: ExperimentState,
+    scenario,
+    ai,
+    participant_id: str,
+):
     render_ai_recommendation(ai)
 
     decision, confidence, submitted = render_final_decision(scenario)
@@ -69,6 +119,7 @@ def ai_stage(experiment, scenario, ai):
 
     experiment.final_decision = decision
     experiment.final_confidence = confidence
+
     experiment.final_score = calculate_score(
         scenario,
         decision,
@@ -104,9 +155,27 @@ def ai_stage(experiment, scenario, ai):
         ai_recommendation=ai.decision,
         ai_confidence=ai.confidence,
         experiment=experiment,
+        participant_id=participant_id,
     )
 
     experiment.observation_saved = True
-    experiment.stage = "complete"
+
+    completed_experiments = get_completed_experiments()
+    completed_experiments.append(experiment)
+
+    move_to_next_scenario()
+
+
+def move_to_next_scenario():
+    current_scenario_index = get_current_scenario_index()
+
+    if current_scenario_index + 1 < len(SCENARIOS):
+        st.session_state.current_scenario_index += 1
+
+        #  new scenario -> new state
+        st.session_state.experiment = ExperimentState()
+
+    else:
+        st.session_state.experiment.stage = "complete"
 
     st.rerun()

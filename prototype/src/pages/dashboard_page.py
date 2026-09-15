@@ -148,6 +148,6 @@ def render_observations(dataframe):
 
     st.dataframe(
         display_dataframe,
-        width=True,
+        width="stretch",
         hide_index=True,
     )

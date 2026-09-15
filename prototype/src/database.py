@@ -22,6 +22,7 @@ def initialize_database():
         CREATE TABLE IF NOT EXISTS observations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             scenario_id TEXT NOT NULL,
+            participant_id TEXT NOT NULL,
 
             initial_decision TEXT NOT NULL,
             initial_confidence INTEGER NOT NULL,
@@ -54,6 +55,7 @@ def save_observation(
     ai_recommendation: str,
     ai_confidence: int,
     experiment: ExperimentState,
+    participant_id: str,
 ):
     connection = get_connection()
 
@@ -61,6 +63,7 @@ def save_observation(
         """
         INSERT INTO observations (
             scenario_id,
+            participant_id,
             initial_decision,
             initial_confidence,
             initial_score,
@@ -76,10 +79,11 @@ def save_observation(
             overreliance,
             created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             scenario_id,
+            participant_id,
             experiment.initial_decision,
             experiment.initial_confidence,
             experiment.initial_score,
@@ -108,6 +112,7 @@ def get_observations():
         """
         SELECT
             id,
+            participant_id,
             scenario_id,
             initial_decision,
             initial_confidence,
@@ -133,3 +138,7 @@ def get_observations():
     connection.close()
 
     return observations
+
+if __name__ == "__main__":
+    print("Initializing database...")
+    initialize_database()

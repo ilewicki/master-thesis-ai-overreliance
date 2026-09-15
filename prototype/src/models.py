@@ -29,6 +29,9 @@ class AIRecommendation:
 @dataclass
 class ExperimentState:
     stage: str = "initial"
+    
+    participant_id: str | None = None
+    current_scenario_id: str | None = None
 
     initial_decision: Decision | None = None
     initial_confidence: int | None = None

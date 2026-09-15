@@ -62,45 +62,28 @@ def render_final_decision(scenario):
     return decision, confidence, submitted
 
 
-def render_experiment_summary(experiment):
+def render_experiment_summary(experiments):
     st.header("Eksperyment zakończony")
 
-    st.write(
-        f"Decyzja początkowa: "
-        f"**{experiment.initial_decision}**"
-    )
+    rows = []
 
-    st.write(
-        f"Decyzja końcowa: "
-        f"**{experiment.final_decision}**"
-    )
+    for index, experiment in enumerate(experiments, start=1):
+        rows.append(
+            {
+                "Scenariusz": index,
+                "Decyzja początkowa": experiment.initial_decision,
+                "Decyzja końcowa": experiment.final_decision,
+                "Wynik początkowy": experiment.initial_score,
+                "Wynik końcowy": experiment.final_score,
+                "Zmiana wyniku": experiment.score_change,
+                "Zmiana decyzji": experiment.decision_changed,
+                "Podążanie za AI": experiment.followed_ai,
+                "Overreliance": experiment.overreliance,
+            }
+        )
 
-    st.write(
-        f"Wynik początkowy: "
-        f"**{experiment.initial_score} pkt**"
-    )
-
-    st.write(
-        f"Wynik końcowy: "
-        f"**{experiment.final_score} pkt**"
-    )
-
-    st.write(
-        f"Zmiana wyniku: "
-        f"**{experiment.score_change:+d} pkt**"
-    )
-
-    st.write(
-        f"Zmiana decyzji: "
-        f"**{experiment.decision_changed}**"
-    )
-
-    st.write(
-        f"Podążanie za AI: "
-        f"**{experiment.followed_ai}**"
-    )
-
-    st.write(
-        f"Overreliance: "
-        f"**{experiment.overreliance}**"
+    st.dataframe(
+        rows,
+        hide_index=True,
+        width="stretch",
     )
