@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import sqlite3
 from pathlib import Path
 
-from models import ExperimentState
+from models.models import Observation
 
 
 DATABASE_PATH = Path(__file__).parent.parent / "data" / "experiment.db"
@@ -15,6 +15,11 @@ def get_connection():
 
 
 def initialize_database():
+    DATABASE_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     connection = get_connection()
 
     connection.execute(
@@ -51,11 +56,7 @@ def initialize_database():
 
 
 def save_observation(
-    scenario_id: str,
-    ai_recommendation: str,
-    ai_confidence: int,
-    experiment: ExperimentState,
-    participant_id: str,
+    observation: Observation,
 ):
     connection = get_connection()
 
@@ -82,21 +83,21 @@ def save_observation(
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            scenario_id,
-            participant_id,
-            experiment.initial_decision,
-            experiment.initial_confidence,
-            experiment.initial_score,
-            ai_recommendation,
-            ai_confidence,
-            experiment.ai_correct,
-            experiment.final_decision,
-            experiment.final_confidence,
-            experiment.final_score,
-            experiment.score_change,
-            experiment.decision_changed,
-            experiment.followed_ai,
-            experiment.overreliance,
+            observation.scenario_id,
+            observation.participant_id,
+            observation.initial_decision.value,
+            observation.initial_confidence,
+            observation.initial_score,
+            observation.ai_recommendation.value,
+            observation.ai_confidence,
+            observation.ai_correct,
+            observation.final_decision.value,
+            observation.final_confidence,
+            observation.final_score,
+            observation.score_change,
+            observation.decision_changed,
+            observation.followed_ai,
+            observation.overreliance,
             datetime.now(timezone.utc).isoformat(),
         ),
     )
@@ -138,6 +139,7 @@ def get_observations():
     connection.close()
 
     return observations
+
 
 if __name__ == "__main__":
     print("Initializing database...")

@@ -1,7 +1,9 @@
-import streamlit as st
 import uuid
 
-from database import initialize_database
+import streamlit as st
+
+from persistance.database import initialize_database
+from models.models import ExperimentSession
 from pages.dashboard_page import render_dashboard
 from pages.experiment_page import render_experiment_page
 
@@ -14,8 +16,13 @@ st.set_page_config(
 if "participant_id" not in st.session_state:
     st.session_state.participant_id = str(uuid.uuid4())
 
-initialize_database()
 
+if "experiment_session" not in st.session_state:
+    st.session_state.experiment_session = ExperimentSession(
+        participant_id=st.session_state.participant_id
+    )
+
+initialize_database()
 
 pages = [
     st.Page(

@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from database import get_observations
+from persistance.database import get_observations
 
 
 def render_dashboard():

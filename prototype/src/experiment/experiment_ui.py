@@ -2,7 +2,7 @@ import streamlit as st
 
 
 def render_header():
-    st.title("AI Overreliance — POC")
+    st.title("Badanie zjawiska AI Overreliance — POC")
 
 
 def render_initial_decision(scenario):
@@ -10,9 +10,12 @@ def render_initial_decision(scenario):
     st.write(scenario.description)
 
     with st.form("initial_decision_form"):
+        decisions = list(scenario.options.keys())
+
         decision = st.radio(
             "Twój wybór:",
-            list(scenario.options.keys()),
+            decisions,
+            format_func=lambda decision: decision.value,
         )
 
         confidence = st.slider(
@@ -33,7 +36,7 @@ def render_ai_recommendation(ai):
     st.header("Rekomendacja AI")
 
     st.write(
-        f"AI rekomenduje: **{ai.decision}**"
+        f"AI rekomenduje: **{ai.decision.value}**"
     )
 
     st.write(
@@ -43,9 +46,12 @@ def render_ai_recommendation(ai):
 
 def render_final_decision(scenario):
     with st.form("final_decision_form"):
+        decisions = list(scenario.options.keys())
+
         decision = st.radio(
-            "Jaka jest Twoja ostateczna decyzja?",
-            list(scenario.options.keys()),
+            "Twój wybór:",
+            decisions,
+            format_func=lambda decision: decision.value,
         )
 
         confidence = st.slider(
@@ -71,8 +77,8 @@ def render_experiment_summary(experiments):
         rows.append(
             {
                 "Scenariusz": index,
-                "Decyzja początkowa": experiment.initial_decision,
-                "Decyzja końcowa": experiment.final_decision,
+                "Decyzja początkowa": experiment.initial_decision.value,
+                "Decyzja końcowa": experiment.final_decision.value,
                 "Wynik początkowy": experiment.initial_score,
                 "Wynik końcowy": experiment.final_score,
                 "Zmiana wyniku": experiment.score_change,

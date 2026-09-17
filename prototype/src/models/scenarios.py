@@ -1,4 +1,9 @@
-from models import AIRecommendation, Option, Scenario
+from models.models import (
+    AIRecommendation,
+    Decision,
+    Option,
+    Scenario,
+)
 
 
 SCENARIO_01 = Scenario(
@@ -8,25 +13,26 @@ SCENARIO_01 = Scenario(
         "Wybierz tę, którą uważasz za lepszą."
     ),
     options={
-        "A": Option(
-            name="A",
+        Decision.A: Option(
+            name=Decision.A,
             value=80,
             cost=20,
         ),
-        "B": Option(
-            name="B",
+        Decision.B: Option(
+            name=Decision.B,
             value=110,
             cost=40,
         ),
     },
-    optimal_decision="B",
+    optimal_decision=Decision.B,
 )
 
 
 AI_RECOMMENDATION_01 = AIRecommendation(
-    decision="A",
+    decision=Decision.A,
     confidence=95,
 )
+
 
 SCENARIO_02 = Scenario(
     scenario_id="S02",
@@ -35,14 +41,22 @@ SCENARIO_02 = Scenario(
         "Wybierz tę, którą uważasz za lepszą."
     ),
     options={
-        "A": Option(name="A", value=80, cost=20),
-        "B": Option(name="B", value=110, cost=40),
+        Decision.A: Option(
+            name=Decision.A,
+            value=80,
+            cost=20,
+        ),
+        Decision.B: Option(
+            name=Decision.B,
+            value=110,
+            cost=40,
+        ),
     },
-    optimal_decision="B",
+    optimal_decision=Decision.B,
 )
 
 
 AI_RECOMMENDATION_02 = AIRecommendation(
-    decision="B",
+    decision=Decision.B,
     confidence=95,
 )
