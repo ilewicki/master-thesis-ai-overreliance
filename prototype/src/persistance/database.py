@@ -8,19 +8,19 @@ from models.models import Observation
 DATABASE_PATH = Path(__file__).parent.parent / "data" / "experiment.db"
 
 
-def get_connection():
-    connection = sqlite3.connect(DATABASE_PATH)
+def get_connection(database_path: Path = DATABASE_PATH):
+    connection = sqlite3.connect(database_path)
     connection.row_factory = sqlite3.Row
     return connection
 
 
-def initialize_database():
-    DATABASE_PATH.parent.mkdir(
+def initialize_database(database_path: Path = DATABASE_PATH):
+    database_path.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    connection = get_connection()
+    connection = get_connection(database_path)
 
     connection.execute(
         """
@@ -57,8 +57,9 @@ def initialize_database():
 
 def save_observation(
     observation: Observation,
+    database_path: Path = DATABASE_PATH,
 ):
-    connection = get_connection()
+    connection = get_connection(database_path)
 
     connection.execute(
         """
@@ -106,8 +107,10 @@ def save_observation(
     connection.close()
 
 
-def get_observations():
-    connection = get_connection()
+def get_observations(
+    database_path: Path = DATABASE_PATH,
+):
+    connection = get_connection(database_path)
 
     cursor = connection.execute(
         """
@@ -139,8 +142,3 @@ def get_observations():
     connection.close()
 
     return observations
-
-
-if __name__ == "__main__":
-    print("Initializing database...")
-    initialize_database()
