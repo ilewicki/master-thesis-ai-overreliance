@@ -5,7 +5,9 @@ from pathlib import Path
 from models.models import Observation
 
 
-DATABASE_PATH = Path(__file__).parent.parent / "data" / "experiment.db"
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+DATABASE_PATH = PROJECT_ROOT / "data" / "experiment.db"
 
 
 def get_connection(database_path: Path = DATABASE_PATH):
@@ -46,6 +48,9 @@ def initialize_database(database_path: Path = DATABASE_PATH):
             followed_ai INTEGER NOT NULL,
             overreliance INTEGER NOT NULL,
 
+            initial_time REAL NOT NULL,
+            final_time REAL NOT NULL,
+
             created_at TEXT NOT NULL
         )
         """
@@ -79,9 +84,11 @@ def save_observation(
             decision_changed,
             followed_ai,
             overreliance,
+            initial_time,
+            final_time,
             created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             observation.scenario_id,
@@ -99,6 +106,8 @@ def save_observation(
             observation.decision_changed,
             observation.followed_ai,
             observation.overreliance,
+            observation.initial_time,
+            observation.final_time,
             datetime.now(timezone.utc).isoformat(),
         ),
     )
@@ -131,6 +140,8 @@ def get_observations(
             decision_changed,
             followed_ai,
             overreliance,
+            initial_time,
+            final_time,
             created_at
         FROM observations
         ORDER BY id DESC
@@ -142,3 +153,8 @@ def get_observations(
     connection.close()
 
     return observations
+
+
+if __name__ == "__main__":
+    print("Initializing database...")
+    initialize_database()

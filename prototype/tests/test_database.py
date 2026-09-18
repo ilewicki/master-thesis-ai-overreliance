@@ -32,6 +32,9 @@ def test_save_and_get_observation(tmp_path):
         decision_changed=True,
         followed_ai=True,
         overreliance=True,
+
+        initial_time=12.5,
+        final_time=8.3,
     )
 
     save_observation(
@@ -64,5 +67,8 @@ def test_save_and_get_observation(tmp_path):
     assert saved["decision_changed"] == 1
     assert saved["followed_ai"] == 1
     assert saved["overreliance"] == 1
+
+    assert saved["initial_time"] == 12.5
+    assert saved["final_time"] == 8.3
 
     assert saved["created_at"] is not None

@@ -20,6 +20,7 @@ def submit_initial_decision(
     scenario: Scenario,
     decision: Decision,
     confidence: int,
+    initial_time: float,
 ) -> None:
     scenario_state = session.current_scenario
 
@@ -29,6 +30,7 @@ def submit_initial_decision(
         scenario,
         decision,
     )
+    scenario_state.initial_time = initial_time
 
     session.stage = ExperimentStage.AI
 
@@ -39,6 +41,7 @@ def complete_scenario(
     ai: AIRecommendation,
     final_decision: Decision,
     final_confidence: int,
+    final_time: float,
 ) -> Observation:
     scenario_state = session.current_scenario
 
@@ -84,6 +87,7 @@ def complete_scenario(
         ai.decision,
         scenario.optimal_decision,
     )
+    scenario_state.final_time = final_time
 
     observation = Observation(
         participant_id=session.participant_id,
@@ -101,6 +105,8 @@ def complete_scenario(
         decision_changed=scenario_state.decision_changed,
         followed_ai=scenario_state.followed_ai,
         overreliance=scenario_state.overreliance,
+        initial_time=scenario_state.initial_time,
+        final_time=scenario_state.final_time,
     )
 
     session.observations.append(observation)

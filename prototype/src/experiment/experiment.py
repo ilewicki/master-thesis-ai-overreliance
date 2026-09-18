@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 
 from .experiment_ui import (
     render_ai_recommendation,
@@ -95,7 +96,9 @@ def render_scenario(
 def initial_stage(
     session: ExperimentSession,
     scenario: Scenario,
-):
+):  
+    start_timer()
+    
     decision, confidence, submitted = render_initial_decision(
         scenario
     )
@@ -103,12 +106,16 @@ def initial_stage(
     if not submitted:
         return
 
+    initial_time = stop_timer()
+
     submit_initial_decision(
         session=session,
         scenario=scenario,
         decision=decision,
         confidence=confidence,
+        initial_time=initial_time,
     )
+    st.session_state.pop("scenario_start_time", None)
 
     st.rerun()
 
@@ -118,6 +125,8 @@ def ai_stage(
     scenario: Scenario,
     ai: AIRecommendation,
 ):
+    start_timer()
+
     render_ai_recommendation(ai)
 
     decision, confidence, submitted = render_final_decision(
@@ -127,12 +136,15 @@ def ai_stage(
     if not submitted:
         return
 
+    final_time = stop_timer()
+
     observation = complete_scenario(
         session=session,
         scenario=scenario,
         ai=ai,
         final_decision=decision,
         final_confidence=confidence,
+        final_time=final_time,
     )
     
     # DB connection
@@ -142,7 +154,7 @@ def ai_stage(
         session=session,
         total_scenarios=len(SCENARIOS),
     )
-
+    st.session_state.pop("scenario_start_time", None)
     st.rerun()
 
 
@@ -154,3 +166,13 @@ def render_scenario_progress(
         f"Scenariusz {current_index + 1} "
         f"z {total_scenarios}"
     )
+
+
+def start_timer():
+    if "scenario_start_time" not in st.session_state:
+        st.session_state.scenario_start_time = time.monotonic()
+
+
+def stop_timer() -> float:
+    start_time = st.session_state.scenario_start_time
+    return time.monotonic() - start_time

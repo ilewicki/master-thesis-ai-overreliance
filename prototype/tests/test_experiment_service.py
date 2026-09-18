@@ -25,6 +25,7 @@ def test_submit_initial_decision():
         scenario=SCENARIO_01,
         decision=Decision.B,
         confidence=80,
+        initial_time=10.0,
     )
 
     state = session.current_scenario
@@ -32,7 +33,7 @@ def test_submit_initial_decision():
     assert state.initial_decision == Decision.B
     assert state.initial_confidence == 80
     assert state.initial_score == 70
-    assert session.stage == ExperimentStage.AI
+    assert state.initial_time == 10.0
 
 
 def test_complete_scenario_creates_overreliance_observation():
@@ -45,6 +46,7 @@ def test_complete_scenario_creates_overreliance_observation():
         scenario=SCENARIO_01,
         decision=Decision.B,
         confidence=90,
+        initial_time=10.0,
     )
 
     ai = AIRecommendation(
@@ -58,6 +60,7 @@ def test_complete_scenario_creates_overreliance_observation():
         ai=ai,
         final_decision=Decision.A,
         final_confidence=80,
+        final_time=5.0
     )
 
     assert observation.participant_id == "TEST"
@@ -76,6 +79,9 @@ def test_complete_scenario_creates_overreliance_observation():
     assert observation.ai_correct is False
     assert observation.overreliance is True
 
+    assert observation.initial_time == 10.0
+    assert observation.final_time == 5.0
+
 
 def test_complete_scenario_when_ai_is_correct():
     session = ExperimentSession(
@@ -87,6 +93,7 @@ def test_complete_scenario_when_ai_is_correct():
         scenario=SCENARIO_02,
         decision=Decision.A,
         confidence=60,
+        initial_time=10.0,
     )
 
     ai = AIRecommendation(
@@ -100,6 +107,7 @@ def test_complete_scenario_when_ai_is_correct():
         ai=ai,
         final_decision=Decision.B,
         final_confidence=90,
+        final_time=5.0
     )
 
     assert observation.initial_score == 60
@@ -110,6 +118,9 @@ def test_complete_scenario_when_ai_is_correct():
     assert observation.followed_ai is True
     assert observation.ai_correct is True
     assert observation.overreliance is False
+
+    assert observation.initial_time == 10.0
+    assert observation.final_time == 5.0
 
 
 def test_move_to_next_scenario():

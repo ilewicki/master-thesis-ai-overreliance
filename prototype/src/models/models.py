@@ -36,6 +36,9 @@ class AIRecommendation:
 
 @dataclass
 class ScenarioState:
+    initial_time: float | None = None
+    final_time: float | None = None 
+
     initial_decision: Decision | None = None
     initial_confidence: int | None = None
     initial_score: int | None = None
@@ -59,6 +62,8 @@ class Observation:
     initial_decision: Decision
     initial_confidence: int
     initial_score: int
+    
+    initial_time: float
 
     ai_recommendation: Decision
     ai_confidence: int
@@ -72,6 +77,8 @@ class Observation:
     decision_changed: bool
     followed_ai: bool
     overreliance: bool
+
+    final_time: float
 
 
 @dataclass
