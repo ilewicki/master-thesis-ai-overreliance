@@ -157,12 +157,42 @@ def save_observation(
     connection.close()
 
 
-def get_observations(
+def get_participants(
     database_path: Path = DATABASE_PATH,
-):
+) -> list[dict]:
     connection = get_connection(database_path)
 
-    cursor = connection.execute(
+    rows = connection.execute(
+        """
+        SELECT
+            participant_id,
+            age_group,
+            education,
+            created_at
+        FROM participants
+        ORDER BY created_at
+        """
+    ).fetchall()
+
+    connection.close()
+
+    return [
+        {
+            "participant_id": row[0],
+            "age_group": row[1],
+            "education": row[2],
+            "created_at": row[3],
+        }
+        for row in rows
+    ]
+
+
+def get_observations(
+    database_path: Path = DATABASE_PATH,
+) -> list[dict]:
+    connection = get_connection(database_path)
+
+    rows = connection.execute(
         """
         SELECT
             id,
@@ -185,15 +215,38 @@ def get_observations(
             final_time,
             created_at
         FROM observations
-        ORDER BY id DESC
+        ORDER BY created_at
         """
-    )
-
-    observations = [dict(row) for row in cursor.fetchall()]
+    ).fetchall()
 
     connection.close()
 
-    return observations
+    columns = [
+        "id",
+        "participant_id",
+        "scenario_id",
+        "initial_decision",
+        "initial_confidence",
+        "initial_score",
+        "ai_recommendation",
+        "ai_confidence",
+        "ai_correct",
+        "final_decision",
+        "final_confidence",
+        "final_score",
+        "score_change",
+        "decision_changed",
+        "followed_ai",
+        "overreliance",
+        "initial_time",
+        "final_time",
+        "created_at",
+    ]
+
+    return [
+        dict(zip(columns, row))
+        for row in rows
+    ]
 
 
 if __name__ == "__main__":

@@ -1,153 +1,211 @@
-import pandas as pd
 import streamlit as st
 
-from persistance.database import get_observations
+from persistance.database import (
+    get_observations,
+    get_participants,
+)
 
 
 def render_dashboard():
-    st.title("📊 Dashboard")
+    st.title("Dashboard badania")
 
-    if st.button("Odśwież dane"):
-        st.rerun()
-
+    participants = get_participants()
     observations = get_observations()
 
-    if not observations:
-        st.info("Brak danych eksperymentu.")
+    if not participants:
+        st.info("Brak uczestników badania.")
         return
 
-    dataframe = pd.DataFrame(observations)
+    render_summary_metrics(participants, observations)
 
-    selected_scenario = render_filters(dataframe)
+    st.divider()
 
-    filtered_dataframe = filter_observations(
-        dataframe,
-        selected_scenario,
+    render_scenario_summary(observations)
+
+    st.divider()
+
+    render_score_summary(observations)
+
+    st.divider()
+
+    render_participants(participants)
+
+
+def render_summary_metrics(participants, observations):
+    total_participants = len(participants)
+    total_observations = len(observations)
+
+    changed_decisions = sum(
+        observation["decision_changed"]
+        for observation in observations
     )
 
-    if filtered_dataframe.empty:
-        st.info("Brak obserwacji dla wybranego filtra.")
-        return
-
-    render_summary(filtered_dataframe)
-    render_charts(filtered_dataframe)
-    render_observations(filtered_dataframe)
-
-
-def render_filters(dataframe):
-    scenarios = ["Wszystkie"] + sorted(
-        dataframe["scenario_id"].unique().tolist()
+    followed_ai = sum(
+        observation["followed_ai"]
+        for observation in observations
     )
 
-    return st.selectbox(
-        "Scenariusz",
-        scenarios,
+    overreliance = sum(
+        observation["overreliance"]
+        for observation in observations
     )
 
+    columns = st.columns(5)
 
-def filter_observations(dataframe, selected_scenario):
-    if selected_scenario == "Wszystkie":
-        return dataframe
-
-    return dataframe[
-        dataframe["scenario_id"] == selected_scenario
-    ]
-
-
-def render_summary(dataframe):
-    total = len(dataframe)
-
-    overreliance_count = dataframe["overreliance"].sum()
-
-    overreliance_rate = (
-        overreliance_count / total * 100
+    columns[0].metric(
+        "Uczestnicy",
+        total_participants,
     )
 
-    ai_helped_count = (
-        (dataframe["ai_correct"] == 1)
-        & (dataframe["score_change"] > 0)
-    ).sum()
-
-    average_score_change = dataframe["score_change"].mean()
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    col1.metric(
+    columns[1].metric(
         "Obserwacje",
-        total,
+        total_observations,
     )
 
-    col2.metric(
+    columns[2].metric(
+        "Zmiana decyzji",
+        changed_decisions,
+    )
+
+    columns[3].metric(
+        "Podążanie za AI",
+        followed_ai,
+    )
+
+    columns[4].metric(
         "Overreliance",
-        f"{overreliance_rate:.1f}%",
-    )
-
-    col3.metric(
-        "AI pomogło",
-        ai_helped_count,
-    )
-
-    col4.metric(
-        "Śr. zmiana wyniku",
-        f"{average_score_change:+.1f}",
+        overreliance,
     )
 
 
-def render_charts(dataframe):
-    st.subheader("Wyniki")
+def render_scenario_summary(observations):
+    st.subheader("Wyniki według scenariusza")
 
-    col1, col2 = st.columns(2)
+    scenario_ids = sorted(
+        {observation["scenario_id"] for observation in observations}
+    )
 
-    with col1:
-        st.write("Overreliance")
+    rows = []
 
-        overreliance_data = (
-            dataframe["overreliance"]
-            .value_counts()
-            .rename(
-                {
-                    0: "Brak overreliance",
-                    1: "Overreliance",
-                }
+    for scenario_id in scenario_ids:
+        scenario_observations = [
+            observation
+            for observation in observations
+            if observation["scenario_id"] == scenario_id
+        ]
+
+        count = len(scenario_observations)
+
+        changed = sum(
+            observation["decision_changed"]
+            for observation in scenario_observations
+        )
+
+        followed_ai = sum(
+            observation["followed_ai"]
+            for observation in scenario_observations
+        )
+
+        overreliance = sum(
+            observation["overreliance"]
+            for observation in scenario_observations
+        )
+
+        average_score_change = (
+            sum(
+                observation["score_change"]
+                for observation in scenario_observations
             )
+            / count
         )
 
-        st.bar_chart(overreliance_data)
-
-    with col2:
-        st.write("Zmiana wyniku")
-
-        st.bar_chart(
-            dataframe["score_change"]
+        rows.append(
+            {
+                "Scenariusz": scenario_id,
+                "Obserwacje": count,
+                "Zmiana decyzji": changed,
+                "Podążanie za AI": followed_ai,
+                "Overreliance": overreliance,
+                "Śr. zmiana wyniku": round(
+                    average_score_change,
+                    2,
+                ),
+            }
         )
-
-
-def render_observations(dataframe):
-    st.subheader("Obserwacje")
-
-    display_dataframe = dataframe.rename(
-        columns={
-            "id": "ID",
-            "scenario_id": "Scenariusz",
-            "initial_decision": "Decyzja początkowa",
-            "initial_confidence": "Pewność początkowa",
-            "initial_score": "Wynik początkowy",
-            "ai_recommendation": "Rekomendacja AI",
-            "ai_confidence": "Pewność AI",
-            "ai_correct": "AI poprawne",
-            "final_decision": "Decyzja końcowa",
-            "final_confidence": "Pewność końcowa",
-            "final_score": "Wynik końcowy",
-            "score_change": "Zmiana wyniku",
-            "decision_changed": "Zmiana decyzji",
-            "followed_ai": "Podążanie za AI",
-            "overreliance": "Overreliance",
-            "created_at": "Utworzono",
-        }
-    )
 
     st.dataframe(
-        display_dataframe,
-        width="stretch",
+        rows,
         hide_index=True,
+        width="stretch",
+    )
+
+
+def render_participants(participants):
+    st.subheader("Uczestnicy")
+
+    rows = [
+        {
+            "Participant ID": participant["participant_id"],
+            "Wiek": participant["age_group"],
+            "Wykształcenie": participant["education"],
+            "Rozpoczęcie": participant["created_at"],
+        }
+        for participant in participants
+    ]
+
+    st.dataframe(
+        rows,
+        hide_index=True,
+        width="stretch",
+    )
+
+
+def render_score_summary(observations):
+    st.subheader("Wpływ zmiany decyzji na wynik")
+
+    score_changes = [
+        observation["score_change"]
+        for observation in observations
+    ]
+
+    if not score_changes:
+        return
+
+    average_change = sum(score_changes) / len(score_changes)
+
+    positive = sum(
+        score_change > 0
+        for score_change in score_changes
+    )
+
+    negative = sum(
+        score_change < 0
+        for score_change in score_changes
+    )
+
+    unchanged = sum(
+        score_change == 0
+        for score_change in score_changes
+    )
+
+    columns = st.columns(4)
+
+    columns[0].metric(
+        "Średnia zmiana wyniku",
+        f"{average_change:.2f}",
+    )
+
+    columns[1].metric(
+        "Wynik poprawiony",
+        positive,
+    )
+
+    columns[2].metric(
+        "Wynik pogorszony",
+        negative,
+    )
+
+    columns[3].metric(
+        "Bez zmiany",
+        unchanged,
     )
