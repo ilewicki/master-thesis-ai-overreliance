@@ -7,6 +7,8 @@ from .experiment_ui import (
     render_final_decision,
     render_header,
     render_initial_decision,
+    render_participant_data,
+    render_welcome,
 )
 from models.models import (
     AIRecommendation,
@@ -27,7 +29,10 @@ from .experiment_service import (
     submit_initial_decision,
 )
 
-from persistance.database import save_observation
+from persistance.database import (
+    save_observation,
+    save_participant,
+)
 
 
 SCENARIOS = [
@@ -39,6 +44,33 @@ SCENARIOS = [
 def render_experiment():
     session = get_experiment_session()
 
+    if session.stage == ExperimentStage.WELCOME:
+        start_experiment = render_welcome()
+
+        if start_experiment:
+            session.stage = ExperimentStage.PARTICIPANT_DATA
+            st.rerun()
+
+        return
+
+    if session.stage == ExperimentStage.PARTICIPANT_DATA:
+        age_group, education, submitted = render_participant_data()
+
+        if submitted:
+            session.age_group = age_group
+            session.education = education
+
+            save_participant(
+                participant_id=session.participant_id,
+                age_group=session.age_group,
+                education=session.education,
+            )
+
+            session.stage = ExperimentStage.INITIAL
+            st.rerun()
+
+        return
+
     if session.stage == ExperimentStage.COMPLETE:
         render_experiment_summary(session.observations)
         return
@@ -46,12 +78,10 @@ def render_experiment():
     scenario, ai = get_current_scenario(session)
 
     render_header()
-
     render_scenario_progress(
         session.current_scenario_index,
         len(SCENARIOS),
     )
-
     render_scenario(
         session=session,
         scenario=scenario,

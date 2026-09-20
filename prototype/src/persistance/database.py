@@ -25,35 +25,76 @@ def initialize_database(database_path: Path = DATABASE_PATH):
     connection = get_connection(database_path)
 
     connection.execute(
+    """
+    CREATE TABLE IF NOT EXISTS observations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        scenario_id TEXT NOT NULL,
+        participant_id TEXT NOT NULL,
+
+        initial_decision TEXT NOT NULL,
+        initial_confidence INTEGER NOT NULL,
+        initial_score INTEGER NOT NULL,
+
+        ai_recommendation TEXT NOT NULL,
+        ai_confidence INTEGER NOT NULL,
+        ai_correct INTEGER NOT NULL,
+
+        final_decision TEXT NOT NULL,
+        final_confidence INTEGER NOT NULL,
+        final_score INTEGER NOT NULL,
+
+        score_change INTEGER NOT NULL,
+        decision_changed INTEGER NOT NULL,
+        followed_ai INTEGER NOT NULL,
+        overreliance INTEGER NOT NULL,
+
+        initial_time REAL NOT NULL,
+        final_time REAL NOT NULL,
+
+        created_at TEXT NOT NULL
+    );
+    """
+    )
+
+    connection.execute(
         """
-        CREATE TABLE IF NOT EXISTS observations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            scenario_id TEXT NOT NULL,
-            participant_id TEXT NOT NULL,
-
-            initial_decision TEXT NOT NULL,
-            initial_confidence INTEGER NOT NULL,
-            initial_score INTEGER NOT NULL,
-
-            ai_recommendation TEXT NOT NULL,
-            ai_confidence INTEGER NOT NULL,
-            ai_correct INTEGER NOT NULL,
-
-            final_decision TEXT NOT NULL,
-            final_confidence INTEGER NOT NULL,
-            final_score INTEGER NOT NULL,
-
-            score_change INTEGER NOT NULL,
-            decision_changed INTEGER NOT NULL,
-            followed_ai INTEGER NOT NULL,
-            overreliance INTEGER NOT NULL,
-
-            initial_time REAL NOT NULL,
-            final_time REAL NOT NULL,
-
+        CREATE TABLE IF NOT EXISTS participants (
+            participant_id TEXT PRIMARY KEY,
+            age_group TEXT NOT NULL,
+            education TEXT NOT NULL,
             created_at TEXT NOT NULL
         )
         """
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def save_participant(
+    participant_id: str,
+    age_group: str,
+    education: str,
+    database_path: Path = DATABASE_PATH,
+) -> None:
+    connection = sqlite3.connect(database_path)
+
+    connection.execute(
+        """
+        INSERT INTO participants (
+            participant_id,
+            age_group,
+            education,
+            created_at
+        )
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            participant_id,
+            age_group,
+            education,
+            datetime.now().isoformat(),
+        ),
     )
 
     connection.commit()

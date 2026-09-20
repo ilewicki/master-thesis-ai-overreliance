@@ -1,10 +1,45 @@
+import sqlite3
+
 from models.models import Decision, Observation
 
 from persistance.database import (
     get_observations,
     initialize_database,
     save_observation,
+    save_participant,
 )
+
+
+def test_save_participant(tmp_path):
+
+    database_path = tmp_path / "test.db"
+
+    initialize_database(database_path)
+
+    save_participant(
+        participant_id="P001",
+        age_group="25–34",
+        education="Wyższe",
+        database_path=database_path,
+    )
+
+    connection = sqlite3.connect(database_path)
+
+    participant = connection.execute(
+        """
+        SELECT participant_id, age_group, education
+        FROM participants
+        WHERE participant_id = ?
+        """,
+        ("P001",),
+    ).fetchone()
+    connection.close()
+
+    assert participant == (
+        "P001",
+        "25–34",
+        "Wyższe",
+    )
 
 
 def test_save_and_get_observation(tmp_path):

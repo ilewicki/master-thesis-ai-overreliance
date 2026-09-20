@@ -8,6 +8,8 @@ class Decision(Enum):
 
 
 class ExperimentStage(Enum):
+    WELCOME = "welcome"
+    PARTICIPANT_DATA = "participant_data"
     INITIAL = "initial"
     AI = "ai"
     COMPLETE = "complete"
@@ -62,7 +64,7 @@ class Observation:
     initial_decision: Decision
     initial_confidence: int
     initial_score: int
-    
+
     initial_time: float
 
     ai_recommendation: Decision
@@ -84,9 +86,10 @@ class Observation:
 @dataclass
 class ExperimentSession:
     participant_id: str
+    age_group: str | None = None
+    education: str | None = None
+
     current_scenario_index: int = 0
-    stage: ExperimentStage = ExperimentStage.INITIAL
-    current_scenario: ScenarioState = field(
-        default_factory=ScenarioState
-    )
+    stage: ExperimentStage = ExperimentStage.WELCOME
+    current_scenario: ScenarioState = field(default_factory=ScenarioState)
     observations: list[Observation] = field(default_factory=list)
