@@ -2,8 +2,8 @@ import uuid
 
 import streamlit as st
 
-from persistance.database import initialize_database
-from models.models import ExperimentSession
+from persistence.database import initialize_database
+from models.domain import ExperimentSession
 from pages.dashboard_page import render_dashboard
 from pages.experiment_page import render_experiment_page
 

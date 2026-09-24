@@ -1,5 +1,5 @@
-from models.models import Decision, Scenario, Option
-from models.scoring import (
+from models.domain import Decision, Scenario, Option
+from experiment.scoring import (
     calculate_decision_change,
     calculate_followed_ai,
     calculate_overreliance,

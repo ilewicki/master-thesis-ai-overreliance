@@ -1,6 +1,7 @@
-from models.models import (
+from models.domain import (
     AIRecommendation,
     Decision,
+    ExperimentScenario,
     Option,
     Scenario,
 )
@@ -60,3 +61,15 @@ AI_RECOMMENDATION_02 = AIRecommendation(
     decision=Decision.B,
     confidence=95,
 )
+
+
+EXPERIMENT_SCENARIOS = [
+    ExperimentScenario(
+        scenario=SCENARIO_01,
+        ai_recommendation=AI_RECOMMENDATION_01,
+    ),
+    ExperimentScenario(
+        scenario=SCENARIO_02,
+        ai_recommendation=AI_RECOMMENDATION_02,
+    ),
+]

@@ -57,6 +57,12 @@ class ScenarioState:
 
 
 @dataclass(frozen=True)
+class ExperimentScenario:
+    scenario: Scenario
+    ai_recommendation: AIRecommendation
+
+
+@dataclass(frozen=True)
 class Observation:
     participant_id: str
     scenario_id: str

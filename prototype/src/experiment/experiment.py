@@ -1,6 +1,12 @@
-import streamlit as st
 import time
 
+import streamlit as st
+
+from .experiment_service import (
+    complete_scenario,
+    move_to_next_scenario,
+    submit_initial_decision,
+)
 from .experiment_ui import (
     render_ai_recommendation,
     render_experiment_summary,
@@ -9,83 +15,45 @@ from .experiment_ui import (
     render_initial_decision,
     render_participant_data,
     render_welcome,
+    render_scenario_progress,
 )
-from models.models import (
-    AIRecommendation,
+from models.domain import (
+    ExperimentScenario,
     ExperimentSession,
     ExperimentStage,
-    Scenario,
 )
-from models.scenarios import (
-    AI_RECOMMENDATION_01,
-    AI_RECOMMENDATION_02,
-    SCENARIO_01,
-    SCENARIO_02,
-)
-
-from .experiment_service import (
-    complete_scenario,
-    move_to_next_scenario,
-    submit_initial_decision,
-)
-
-from persistance.database import (
+from models.scenarios import EXPERIMENT_SCENARIOS
+from persistence.database import (
     save_observation,
     save_participant,
 )
-
-
-SCENARIOS = [
-    (SCENARIO_01, AI_RECOMMENDATION_01),
-    (SCENARIO_02, AI_RECOMMENDATION_02),
-]
 
 
 def render_experiment():
     session = get_experiment_session()
 
     if session.stage == ExperimentStage.WELCOME:
-        start_experiment = render_welcome()
-
-        if start_experiment:
-            session.stage = ExperimentStage.PARTICIPANT_DATA
-            st.rerun()
-
+        render_welcome_stage(session)
         return
 
     if session.stage == ExperimentStage.PARTICIPANT_DATA:
-        age_group, education, submitted = render_participant_data()
-
-        if submitted:
-            session.age_group = age_group
-            session.education = education
-
-            save_participant(
-                participant_id=session.participant_id,
-                age_group=session.age_group,
-                education=session.education,
-            )
-
-            session.stage = ExperimentStage.INITIAL
-            st.rerun()
-
+        render_participant_data_stage(session)
         return
 
     if session.stage == ExperimentStage.COMPLETE:
         render_experiment_summary(session.observations)
         return
 
-    scenario, ai = get_current_scenario(session)
+    experiment_scenario = get_current_scenario(session)
 
     render_header()
     render_scenario_progress(
-        session.current_scenario_index,
-        len(SCENARIOS),
+        current_index=session.current_scenario_index,
+        total_scenarios=len(EXPERIMENT_SCENARIOS),
     )
     render_scenario(
         session=session,
-        scenario=scenario,
-        ai=ai,
+        experiment_scenario=experiment_scenario,
     )
 
 
@@ -100,37 +68,68 @@ def get_experiment_session() -> ExperimentSession:
 
 def get_current_scenario(
     session: ExperimentSession,
-) -> tuple[Scenario, AIRecommendation]:
-    return SCENARIOS[session.current_scenario_index]
+) -> ExperimentScenario:
+    return EXPERIMENT_SCENARIOS[
+        session.current_scenario_index
+    ]
+
+
+def render_welcome_stage(
+    session: ExperimentSession,
+):
+    start_experiment = render_welcome()
+
+    if start_experiment:
+        session.stage = ExperimentStage.PARTICIPANT_DATA
+        st.rerun()
+
+
+def render_participant_data_stage(
+    session: ExperimentSession,
+):
+    age_group, education, submitted = render_participant_data()
+
+    if not submitted:
+        return
+
+    session.age_group = age_group
+    session.education = education
+
+    save_participant(
+        participant_id=session.participant_id,
+        age_group=session.age_group,
+        education=session.education,
+    )
+
+    session.stage = ExperimentStage.INITIAL
+    st.rerun()
 
 
 def render_scenario(
     session: ExperimentSession,
-    scenario: Scenario,
-    ai: AIRecommendation,
+    experiment_scenario: ExperimentScenario,
 ):
     if session.stage == ExperimentStage.INITIAL:
-        initial_stage(
-            session,
-            scenario,
+        handle_initial_stage(
+            session=session,
+            experiment_scenario=experiment_scenario,
         )
 
     elif session.stage == ExperimentStage.AI:
-        ai_stage(
-            session,
-            scenario,
-            ai,
+        handle_ai_stage(
+            session=session,
+            experiment_scenario=experiment_scenario,
         )
 
 
-def initial_stage(
+def handle_initial_stage(
     session: ExperimentSession,
-    scenario: Scenario,
-):  
+    experiment_scenario: ExperimentScenario,
+):
     start_timer()
-    
+
     decision, confidence, submitted = render_initial_decision(
-        scenario
+        experiment_scenario.scenario
     )
 
     if not submitted:
@@ -140,27 +139,27 @@ def initial_stage(
 
     submit_initial_decision(
         session=session,
-        scenario=scenario,
+        scenario=experiment_scenario.scenario,
         decision=decision,
         confidence=confidence,
         initial_time=initial_time,
     )
-    st.session_state.pop("scenario_start_time", None)
 
     st.rerun()
 
 
-def ai_stage(
+def handle_ai_stage(
     session: ExperimentSession,
-    scenario: Scenario,
-    ai: AIRecommendation,
+    experiment_scenario: ExperimentScenario,
 ):
     start_timer()
 
-    render_ai_recommendation(ai)
+    render_ai_recommendation(
+        experiment_scenario.ai_recommendation
+    )
 
     decision, confidence, submitted = render_final_decision(
-        scenario
+        experiment_scenario.scenario
     )
 
     if not submitted:
@@ -170,32 +169,21 @@ def ai_stage(
 
     observation = complete_scenario(
         session=session,
-        scenario=scenario,
-        ai=ai,
+        scenario=experiment_scenario.scenario,
+        ai=experiment_scenario.ai_recommendation,
         final_decision=decision,
         final_confidence=confidence,
         final_time=final_time,
     )
-    
-    # DB connection
+
     save_observation(observation)
 
     move_to_next_scenario(
         session=session,
-        total_scenarios=len(SCENARIOS),
+        total_scenarios=len(EXPERIMENT_SCENARIOS),
     )
-    st.session_state.pop("scenario_start_time", None)
+
     st.rerun()
-
-
-def render_scenario_progress(
-    current_index: int,
-    total_scenarios: int,
-):
-    st.caption(
-        f"Scenariusz {current_index + 1} "
-        f"z {total_scenarios}"
-    )
 
 
 def start_timer():
@@ -204,5 +192,5 @@ def start_timer():
 
 
 def stop_timer() -> float:
-    start_time = st.session_state.scenario_start_time
+    start_time = st.session_state.pop("scenario_start_time")
     return time.monotonic() - start_time

@@ -1,6 +1,6 @@
 import streamlit as st
 
-from persistance.database import (
+from persistence.database import (
     get_observations,
     get_participants,
 )

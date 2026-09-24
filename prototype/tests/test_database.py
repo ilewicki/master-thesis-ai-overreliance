@@ -1,8 +1,8 @@
 import sqlite3
 
-from models.models import Decision, Observation
+from models.domain import Decision, Observation
 
-from persistance.database import (
+from persistence.database import (
     get_observations,
     initialize_database,
     save_observation,

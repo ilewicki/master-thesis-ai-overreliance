@@ -1,4 +1,4 @@
-from models.models import (
+from models.domain import (
     AIRecommendation,
     Decision,
     ExperimentSession,

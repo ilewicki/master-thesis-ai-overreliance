@@ -155,3 +155,13 @@ def render_experiment_summary(observations):
         hide_index=True,
         width="stretch",
     )
+
+
+def render_scenario_progress(
+    current_index: int,
+    total_scenarios: int,
+):
+    st.caption(
+        f"Scenariusz {current_index + 1} "
+        f"z {total_scenarios}"
+    )

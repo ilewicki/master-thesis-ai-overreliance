@@ -1,4 +1,4 @@
-from models.models import (
+from models.domain import (
     AIRecommendation,
     Decision,
     ExperimentSession,
@@ -7,7 +7,7 @@ from models.models import (
     Scenario,
     ScenarioState,
 )
-from models.scoring import (
+from experiment.scoring import (
     calculate_decision_change,
     calculate_followed_ai,
     calculate_overreliance,

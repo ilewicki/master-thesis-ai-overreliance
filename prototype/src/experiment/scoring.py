@@ -1,4 +1,4 @@
-from models.models import Decision, Scenario
+from models.domain import Decision, Scenario
 
 
 def calculate_score(
