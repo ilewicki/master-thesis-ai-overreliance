@@ -38,22 +38,14 @@ class AIRecommendation:
 
 @dataclass
 class ScenarioState:
-    initial_time: float | None = None
-    final_time: float | None = None 
-
     initial_decision: Decision | None = None
     initial_confidence: int | None = None
     initial_score: int | None = None
+    initial_time: float | None = None
 
     final_decision: Decision | None = None
     final_confidence: int | None = None
-    final_score: int | None = None
-
-    score_change: int | None = None
-    decision_changed: bool = False
-    followed_ai: bool = False
-    ai_correct: bool | None = None
-    overreliance: bool = False
+    final_time: float | None = None
 
 
 @dataclass(frozen=True)

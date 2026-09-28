@@ -14,8 +14,8 @@ from .experiment_ui import (
     render_header,
     render_initial_decision,
     render_participant_data,
-    render_welcome,
     render_scenario_progress,
+    render_welcome,
 )
 from models.domain import (
     ExperimentScenario,
@@ -33,11 +33,11 @@ def render_experiment():
     session = get_experiment_session()
 
     if session.stage == ExperimentStage.WELCOME:
-        render_welcome_stage(session)
+        handle_welcome_stage(session)
         return
 
     if session.stage == ExperimentStage.PARTICIPANT_DATA:
-        render_participant_data_stage(session)
+        handle_participant_data_stage(session)
         return
 
     if session.stage == ExperimentStage.COMPLETE:
@@ -51,10 +51,19 @@ def render_experiment():
         current_index=session.current_scenario_index,
         total_scenarios=len(EXPERIMENT_SCENARIOS),
     )
-    render_scenario(
-        session=session,
-        experiment_scenario=experiment_scenario,
-    )
+
+    if session.stage == ExperimentStage.INITIAL:
+        handle_initial_stage(
+            session=session,
+            experiment_scenario=experiment_scenario,
+        )
+        return
+
+    if session.stage == ExperimentStage.AI:
+        handle_ai_stage(
+            session=session,
+            experiment_scenario=experiment_scenario,
+        )
 
 
 def get_experiment_session() -> ExperimentSession:
@@ -74,7 +83,7 @@ def get_current_scenario(
     ]
 
 
-def render_welcome_stage(
+def handle_welcome_stage(
     session: ExperimentSession,
 ):
     start_experiment = render_welcome()
@@ -84,7 +93,7 @@ def render_welcome_stage(
         st.rerun()
 
 
-def render_participant_data_stage(
+def handle_participant_data_stage(
     session: ExperimentSession,
 ):
     age_group, education, submitted = render_participant_data()
@@ -97,29 +106,12 @@ def render_participant_data_stage(
 
     save_participant(
         participant_id=session.participant_id,
-        age_group=session.age_group,
-        education=session.education,
+        age_group=age_group,
+        education=education,
     )
 
     session.stage = ExperimentStage.INITIAL
     st.rerun()
-
-
-def render_scenario(
-    session: ExperimentSession,
-    experiment_scenario: ExperimentScenario,
-):
-    if session.stage == ExperimentStage.INITIAL:
-        handle_initial_stage(
-            session=session,
-            experiment_scenario=experiment_scenario,
-        )
-
-    elif session.stage == ExperimentStage.AI:
-        handle_ai_stage(
-            session=session,
-            experiment_scenario=experiment_scenario,
-        )
 
 
 def handle_initial_stage(

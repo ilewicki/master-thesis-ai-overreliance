@@ -45,74 +45,87 @@ def complete_scenario(
 ) -> Observation:
     scenario_state = session.current_scenario
 
-    scenario_state.final_decision = final_decision
-    scenario_state.final_confidence = final_confidence
+    _validate_initial_state(scenario_state)
 
-    if scenario_state.initial_decision is None:
-        raise RuntimeError("Initial decision has not been submitted.")
+    initial_decision = scenario_state.initial_decision
+    initial_confidence = scenario_state.initial_confidence
+    initial_score = scenario_state.initial_score
+    initial_time = scenario_state.initial_time
 
-    if scenario_state.initial_confidence is None:
-        raise RuntimeError("Initial confidence has not been submitted.")
-
-    if scenario_state.initial_score is None:
-        raise RuntimeError("Initial score has not been calculated.")
-
-    scenario_state.final_score = calculate_score(
+    final_score = calculate_score(
         scenario,
         final_decision,
     )
 
-    scenario_state.score_change = (
-        scenario_state.final_score
-        - scenario_state.initial_score
-    )
+    score_change = final_score - initial_score
 
-    scenario_state.decision_changed = calculate_decision_change(
-        scenario_state.initial_decision,
+    decision_changed = calculate_decision_change(
+        initial_decision,
         final_decision,
     )
 
-    scenario_state.followed_ai = calculate_followed_ai(
+    followed_ai = calculate_followed_ai(
         final_decision,
         ai.decision,
     )
 
-    scenario_state.ai_correct = (
-        ai.decision == scenario.optimal_decision
-    )
+    ai_correct = ai.decision == scenario.optimal_decision
 
-    scenario_state.overreliance = calculate_overreliance(
-        scenario_state.initial_decision,
+    overreliance = calculate_overreliance(
+        initial_decision,
         final_decision,
         ai.decision,
         scenario.optimal_decision,
     )
-    scenario_state.final_time = final_time
 
     observation = Observation(
         participant_id=session.participant_id,
         scenario_id=scenario.scenario_id,
-        initial_decision=scenario_state.initial_decision,
-        initial_confidence=scenario_state.initial_confidence,
-        initial_score=scenario_state.initial_score,
+        initial_decision=initial_decision,
+        initial_confidence=initial_confidence,
+        initial_score=initial_score,
+        initial_time=initial_time,
         ai_recommendation=ai.decision,
         ai_confidence=ai.confidence,
-        ai_correct=scenario_state.ai_correct,
-        final_decision=scenario_state.final_decision,
-        final_confidence=scenario_state.final_confidence,
-        final_score=scenario_state.final_score,
-        score_change=scenario_state.score_change,
-        decision_changed=scenario_state.decision_changed,
-        followed_ai=scenario_state.followed_ai,
-        overreliance=scenario_state.overreliance,
-        initial_time=scenario_state.initial_time,
-        final_time=scenario_state.final_time,
+        ai_correct=ai_correct,
+        final_decision=final_decision,
+        final_confidence=final_confidence,
+        final_score=final_score,
+        final_time=final_time,
+        score_change=score_change,
+        decision_changed=decision_changed,
+        followed_ai=followed_ai,
+        overreliance=overreliance,
     )
 
     session.observations.append(observation)
 
     return observation
 
+
+def _validate_initial_state(
+    scenario_state: ScenarioState,
+) -> None:
+    if scenario_state.initial_decision is None:
+        raise RuntimeError(
+            "Initial decision has not been submitted."
+        )
+
+    if scenario_state.initial_confidence is None:
+        raise RuntimeError(
+            "Initial confidence has not been submitted."
+        )
+
+    if scenario_state.initial_score is None:
+        raise RuntimeError(
+            "Initial score has not been calculated."
+        )
+
+    if scenario_state.initial_time is None:
+        raise RuntimeError(
+            "Initial time has not been recorded."
+        )
+    
 
 def move_to_next_scenario(
     session: ExperimentSession,
